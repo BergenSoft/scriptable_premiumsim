@@ -1,4 +1,4 @@
-# scriptable_premiumsim
+# PremiumSim data usage for scriptables
 Creates a small widget to show the current data usage in relation to the current passed month.
 The outer circle is the progress of the current running month and the inner circle is the data used.
 The color of the inner circle changes from green to yellow to red, depending on your usage relative to the current month.
