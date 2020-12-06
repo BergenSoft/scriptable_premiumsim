@@ -3,8 +3,17 @@
 // icon-color: pink; icon-glyph: broadcast-tower;
 // share-sheet-inputs: plain-text;
 
+
 /*****************
-Version 1.0.0
+Version 1.0.1
+
+Changelog:
+----------
+
+Version 1.0.1:
+    Fixed reading total inclusive amount.
+	Improved displaying of used amount.
+
 
 If you have problems or need help, please ask for support here:
 https://github.com/BergenSoft/scriptable_premiumsim
@@ -16,7 +25,9 @@ https://github.com/chaeimg/battCircle/blob/main/battLevel.js
 
 
 // How many minutes should the cache be used
-let m_CacheMinutes = 60;
+let m_forceReload = true;
+let m_Credentials = "username|password"; // This is required to force reload data, otherwise you can use widget arguments
+let m_CacheMinutes = 60 * 4;
 
 // Styles
 const m_CanvSize = 200;
@@ -42,7 +53,7 @@ const m_Canvas = new DrawContext();
 // Used URLS
 const m_LoginPageUrl = "https://service.premiumsim.de";
 const m_LoginUrl = "https://service.premiumsim.de/public/login_check";
-const m_StartUrl = "https://service.premiumsim.de/start";
+const m_DataUsageUrl = "https://service.premiumsim.de/mytariff/invoice/showGprsDataUsage";
 
 // For processing the requests
 let m_Cookies = { "isCookieAllowed": "true" };
@@ -71,7 +82,7 @@ const m_CacheDate = m_CacheExists ? m_Filemanager.modificationDate(m_CachePath) 
 
 
 // Parse widget input
-const widgetParameterRAW = args.widgetParameter;
+const widgetParameterRAW = args.widgetParameter || m_Credentials;
 let username, password;
 
 if (widgetParameterRAW !== null)
@@ -90,7 +101,7 @@ else if (config.runsInWidget)
 
 try
 {
-    if (!m_CacheExists || (m_Today.getTime() - m_CacheDate.getTime()) > (m_CacheMinutes * 60 * 1000) || !loadDataFromCache())
+    if (m_forceReload || !m_CacheExists || (m_Today.getTime() - m_CacheDate.getTime()) > (m_CacheMinutes * 60 * 1000) || !loadDataFromCache())
     {
         // Load from website
         await prepareLoginData();
@@ -139,7 +150,7 @@ async function getDataUsage()
 
     if (req.response.statusCode == 302 && req.response.headers["Location"] == "/start")
     {
-        req = new Request(m_StartUrl);
+        req = new Request(m_DataUsageUrl);
 
         req.headers = {
             'Cookie': getCookiesString(),
@@ -152,11 +163,22 @@ async function getDataUsage()
         };
         resp = await req.loadString();
 
+        let dataInclusive = getSubstring(resp, ['class="dataBlob inclusive"', 'Inklusives Datenvolumen'], '</div>').trim();
         let dataUsageBytes = getSubstring(resp, ['class="dataUsageOverlay"', '<div class="line">'], '</div>').trim();
         let dataUsagePercent = getSubstring(resp, ['class="dataUsageOverlay"', '<div class="line">', '<div class="line">'], '</div>').trim();
 
-        dataUsageBytes = dataUsageBytes.replace(",", ".");
-        dataUsagePercent = dataUsagePercent.replace(",", ".");
+        dataInclusive = dataInclusive.replace(",", ".").trim();
+        dataUsageBytes = dataUsageBytes.replace(",", ".").trim();
+        dataUsagePercent = dataUsagePercent.replace(",", ".").trim();
+
+        if (dataInclusive.indexOf('GB') !== -1)
+            dataInclusive = parseInt(dataInclusive.substr(0, dataInclusive.length - 2));
+        else if (dataInclusive.indexOf('MB') !== -1)
+            dataInclusive = parseInt(dataInclusive.substr(0, dataInclusive.length - 2) / 1024);
+        else if (dataInclusive.indexOf('KB') !== -1)
+            dataInclusive = parseInt(dataInclusive.substr(0, dataInclusive.length - 2) / 1024 / 1024);
+        else if (dataInclusive.indexOf('B') !== -1)
+            dataInclusive = parseInt(dataInclusive.substr(0, dataInclusive.length - 1) / 1024 / 1024 / 1024);
 
         if (dataUsageBytes.indexOf('GB') !== -1)
             dataUsageBytes = parseFloat(dataUsageBytes.substr(0, dataUsageBytes.length - 2)) * 1024 * 1024 * 1024;
@@ -172,7 +194,7 @@ async function getDataUsage()
 
         m_Data.bytes = dataUsageBytes;
         m_Data.percent = dataUsagePercent;
-        m_Data.total = Math.round(m_Data.bytes / 1024 / 1024 / 1024 / m_Data.percent * 100);
+        m_Data.total = dataInclusive;
 
         console.log(m_Data.total + " GB");
         console.log(dataUsageBytes);
@@ -286,7 +308,7 @@ async function createWidget()
     m_Canvas.setFillColor(new Color(m_CanvBackColor));
     m_Canvas.fill(bgc);
 
-    const percentMonth = 0.9;//(m_Today.getTime() - m_MonthStart.getTime()) / (m_MonthEnd.getTime() - m_MonthStart.getTime());
+    const percentMonth = (m_Today.getTime() - m_MonthStart.getTime()) / (m_MonthEnd.getTime() - m_MonthStart.getTime());
     const fillColorData = (m_Data.percent / 100 <= percentMonth) ? m_CanvFillColorDataGood : ((m_Data.percent / 100 / 1.1 <= percentMonth) ? m_CanvFillColorDataOK : m_CanvFillColorDataBad);
 
 
@@ -320,7 +342,18 @@ async function createWidget()
     m_Canvas.setTextAlignedCenter();
     m_Canvas.setTextColor(new Color(m_CanvTextColor));
     m_Canvas.setFont(Font.boldSystemFont(m_CanvTextSize));
-    m_Canvas.drawTextInRect(`${Math.round(m_Data.bytes / 1024 / 1024 / 1024 * 10) / 10} / ${m_Data.total} GB`, canvTextRectBytes);
+    if (m_Data.bytes < 100 * 1024 * 1024) // < 100 MB
+    {
+        m_Canvas.drawTextInRect(`${(m_Data.bytes / 1024 / 1024).toFixed(0)} MB / ${m_Data.total} GB`, canvTextRectBytes);
+    }
+    else if (m_Data.bytes < 1024 * 1024 * 1024) // < 1 GB
+    {
+        m_Canvas.drawTextInRect(`${(m_Data.bytes / 1024 / 1024 / 1024).toFixed(2)} GB / ${m_Data.total} GB`, canvTextRectBytes);
+    }
+    else
+    {
+        m_Canvas.drawTextInRect(`${(m_Data.bytes / 1024 / 1024 / 1024).toFixed(1)} GB / ${m_Data.total} GB`, canvTextRectBytes);
+    }
     m_Canvas.drawTextInRect(`${m_Data.percent} %`, canvTextRectPercent);
 
     const canvImage = m_Canvas.getImage();
