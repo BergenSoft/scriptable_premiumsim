@@ -5,10 +5,13 @@
 
 
 /*****************
-Version 1.0.1
+Version 1.0.2
 
 Changelog:
 ----------
+
+Version 1.0.2:
+	Added possibility to use other drillisch companies. (Feature untested, because of missing access to other providers)
 
 Version 1.0.1:
     Fixed reading total inclusive amount.
@@ -24,9 +27,11 @@ https://github.com/chaeimg/battCircle/blob/main/battLevel.js
 */
 
 
-// How many minutes should the cache be used
 let m_forceReload = true;
 let m_Credentials = "username|password"; // This is required to force reload data, otherwise you can use widget arguments
+// m_Credentials = "username|password|winsim.de"; // Add other drillisch company, default is premiumsim.de
+
+// How many minutes should the cache be used
 let m_CacheMinutes = 60 * 4;
 
 // Styles
@@ -49,11 +54,6 @@ const m_CanvRadiusData = 70;
 // Used to draw the circles
 const m_Canvas = new DrawContext();
 
-
-// Used URLS
-const m_LoginPageUrl = "https://service.premiumsim.de";
-const m_LoginUrl = "https://service.premiumsim.de/public/login_check";
-const m_DataUsageUrl = "https://service.premiumsim.de/mytariff/invoice/showGprsDataUsage";
 
 // For processing the requests
 let m_Cookies = { "isCookieAllowed": "true" };
@@ -83,21 +83,29 @@ const m_CacheDate = m_CacheExists ? m_Filemanager.modificationDate(m_CachePath) 
 
 // Parse widget input
 const widgetParameterRAW = args.widgetParameter || m_Credentials;
-let username, password;
+let username, password, provider;
 
 if (widgetParameterRAW !== null)
 {
-    [username, password] = widgetParameterRAW.toString().split("|");
+    [username, password, provider] = widgetParameterRAW.toString().split("|");
 
     if (!username || !password)
     {
-        throw new Error("Invalid Widget parameter. Expected format: username|password")
+        throw new Error("Invalid Widget parameter. Expected format: username|password|provider")
     }
 }
 else if (config.runsInWidget)
 {
-    throw new Error("Widget parameter missing. Expected format: username|password")
+    throw new Error("Widget parameter missing. Expected format: username|password|provider")
 }
+
+if (provider == null)
+	provider = "premiumsim.de";
+
+// Used URLS
+let m_LoginPageUrl = "https://service." + provider;
+let m_LoginUrl = "https://service." + provider + "/public/login_check";
+let m_DataUsageUrl = "https://service." + provider + "/mytariff/invoice/showGprsDataUsage";
 
 try
 {
