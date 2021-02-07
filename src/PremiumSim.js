@@ -33,6 +33,7 @@ let m_Credentials = "username|password"; // This is required to force reload dat
 
 // How many minutes should the cache be used
 let m_CacheMinutes = 60 * 4;
+let m_fileManagerMode = "ICLOUD"
 
 // Styles
 const m_CanvSize = 200;
@@ -73,32 +74,53 @@ const m_MonthStart = new Date(m_Today.getFullYear(), m_Today.getMonth(), 1);
 const m_MonthEnd = new Date(m_Today.getFullYear(), m_Today.getMonth() + 1, 1);
 
 // Set up the file manager.
-const m_Filemanager = FileManager.local()
+const m_Filemanager = m_fileManagerMode === 'LOCAL' ? FileManager.local() : FileManager.iCloud();
 
 // Set up cache
-const m_CachePath = m_Filemanager.joinPath(m_Filemanager.documentsDirectory(), Script.name() + "on"); // json file ("js" + "on")
+let m_CachePath = m_Filemanager.joinPath(m_Filemanager.documentsDirectory(), Script.name());
+if (!m_Filemanager.fileExists(m_CachePath)) {
+    m_Filemanager.createDirectory(m_CachePath);
+}
+m_CachePath = m_Filemanager.joinPath(m_CachePath, "Cache.json");
+console.log("Cache Path: " + m_CachePath);
 const m_CacheExists = m_Filemanager.fileExists(m_CachePath)
 const m_CacheDate = m_CacheExists ? m_Filemanager.modificationDate(m_CachePath) : 0
 
-
-// Parse widget input
-const widgetParameterRAW = args.widgetParameter || m_Credentials;
 let username, password, provider;
 
-if (widgetParameterRAW !== null)
-{
-    [username, password, provider] = widgetParameterRAW.toString().split("|");
-
-    if (!username || !password)
+// Retrive config file (if created)
+const m_ConfigFile = m_Filemanager.joinPath(m_Filemanager.documentsDirectory(), Script.name()) + "/config.json";
+if (m_fileManagerMode === 'ICLOUD') m_Filemanager.downloadFileFromiCloud(m_ConfigFile);
+if (m_Filemanager.fileExists(m_ConfigFile)) {
+    console.log("Config file: " + m_ConfigFile);
+    let userStr = await m_Filemanager.readString(m_ConfigFile)
+    const CFG = JSON.parse(userStr);
+    if (CFG !== null)
     {
-        throw new Error("Invalid Widget parameter. Expected format: username|password|provider")
+        username = CFG.username;
+        password = CFG.password;
+        if (CFG.provider !== null) provider = CFG.provider;
     }
 }
-else if (config.runsInWidget)
+else
 {
-    throw new Error("Widget parameter missing. Expected format: username|password|provider")
-}
+    // Parse widget input
+    const widgetParameterRAW = args.widgetParameter || m_Credentials;
 
+    if (widgetParameterRAW !== null)
+    {
+        [username, password, provider] = widgetParameterRAW.toString().split("|");
+
+        if (!username || !password)
+        {
+            throw new Error("Invalid Widget parameter. Expected format: username|password|provider")
+        }
+    }
+    else if (config.runsInWidget)
+    {
+        throw new Error("Widget parameter missing. Expected format: username|password|provider")
+    }
+}
 if (provider == null)
 	provider = "premiumsim.de";
 
