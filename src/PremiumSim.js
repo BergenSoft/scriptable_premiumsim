@@ -24,6 +24,9 @@ https://github.com/BergenSoft/scriptable_premiumsim
 
 credits:
 https://github.com/chaeimg/battCircle/blob/main/battLevel.js
+
+To edit via iCloud mapped local drive see
+~/Library/Mobile Documents/iCloud~dk~simonbs~Scriptable/Documents
 */
 
 
@@ -88,11 +91,30 @@ const m_CacheDate = m_CacheExists ? m_Filemanager.modificationDate(m_CachePath) 
 
 let username, password, provider;
 
-// Retrive config file (if created)
+// Retrieve config file (if created)
 const m_ConfigFile = m_Filemanager.joinPath(m_Filemanager.documentsDirectory(), Script.name()) + "/config.json";
 if (m_fileManagerMode === 'ICLOUD') m_Filemanager.downloadFileFromiCloud(m_ConfigFile);
+
+// (1) check first Widget Parameter
+
+// Parse widget input
+const widgetParameterRAW = args.widgetParameter;
+
+if (widgetParameterRAW !== null)
+{
+    console.log("using Widget Parameter+" + args.widgetParameter);
+    [username, password, provider] = widgetParameterRAW.toString().split("|");
+
+    if (!username || !password)
+    {
+        throw new Error("Invalid Widget parameter. Expected format: username|password|provider")
+    }
+}
+// no Widget Parameter
+// (2) Check from Config file 
+else 
 if (m_Filemanager.fileExists(m_ConfigFile)) {
-    console.log("Config file: " + m_ConfigFile);
+    console.log("using Config file: " + m_ConfigFile);
     let userStr = await m_Filemanager.readString(m_ConfigFile)
     const CFG = JSON.parse(userStr);
     if (CFG !== null)
@@ -102,25 +124,12 @@ if (m_Filemanager.fileExists(m_ConfigFile)) {
         if (CFG.provider !== null) provider = CFG.provider;
     }
 }
-else
+// otherwise Error
+else if (config.runsInWidget)
 {
-    // Parse widget input
-    const widgetParameterRAW = args.widgetParameter || m_Credentials;
-
-    if (widgetParameterRAW !== null)
-    {
-        [username, password, provider] = widgetParameterRAW.toString().split("|");
-
-        if (!username || !password)
-        {
-            throw new Error("Invalid Widget parameter. Expected format: username|password|provider")
-        }
-    }
-    else if (config.runsInWidget)
-    {
-        throw new Error("Widget parameter missing. Expected format: username|password|provider")
-    }
+    throw new Error("Widget parameter missing. Expected format: username|password|provider")
 }
+
 if (provider == null)
 	provider = "premiumsim.de";
 
