@@ -14,6 +14,7 @@ The provider could be winsim.de for example
 If you don't want to save your credentials as widget parameter, you can also create a file in your iCloud drive.
 Path: iCloudScriptableFolder/**&lt;ScriptName&gt;**/config.json
 Add it in the following format:
+
     {
         "username": "username",
         "password": "password",
