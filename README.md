@@ -12,13 +12,13 @@ Enter your other drillisch provider credentials as widget parameters in the form
 The provider could be winsim.de for example
 
 If you don't want to save your credentials as widget parameter, you can also create a file in your iCloud drive.
-Path: iCloudScriptableFolder/<ScriptName>/config.json
+Path: iCloudScriptableFolder/**&lt;ScriptName&gt;**/config.json
 Add it in the following format:
-{
-	"username": "username",
-	"password": "password",
-    "provider": "optional Entry or e.g. winsim.de"
-}
+    {
+        "username": "username",
+        "password": "password",
+        "provider": "optional Entry or e.g. winsim.de"
+    }
 
 The default ScriptName is Premium and the needed folder is created automatically when you run the script for the first time.
 
