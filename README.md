@@ -11,7 +11,7 @@ Enter your PremiumSim credentials as widget parameters in the format `username|p
 Enter your other drillisch provider credentials as widget parameters in the format `username|password|provider`.
 The `provider` could be `winsim.de` for example
 
-If you don't want to save your credentials as widget parameter, you can also create a file in your iCloud drive.
+If you don't want to save your credentials as widget parameter, you can also create a file in your iCloud drive.<br/>
 Path: **iCloudScriptableFolder/`ScriptName`/config.json**<br/>
 Add it in the following format:
 
