@@ -4,18 +4,24 @@
 // share-sheet-inputs: plain-text;
 
 
+
 /*****************
-Version 1.0.2
+Version 1.0.3
 
 Changelog:
 ----------
 
+Version 1.0.3:
+    - Added possibility to store credentials also in an external config on the iCloud Drive which is not being touched by updates.
+    - Removed option to store credentials in the script itself.
+    - Always reload data when started within scriptable app.
+
 Version 1.0.2:
-	Added possibility to use other drillisch companies. (Feature untested, because of missing access to other providers)
+    - Added possibility to use other drillisch companies.
 
 Version 1.0.1:
-    Fixed reading total inclusive amount.
-	Improved displaying of used amount.
+    - Fixed reading total inclusive amount.
+    - Improved displaying of used amount.
 
 
 If you have problems or need help, please ask for support here:
@@ -24,19 +30,14 @@ https://github.com/BergenSoft/scriptable_premiumsim
 
 credits:
 https://github.com/chaeimg/battCircle/blob/main/battLevel.js
-
-To edit via iCloud mapped local drive see
-~/Library/Mobile Documents/iCloud~dk~simonbs~Scriptable/Documents
 */
 
 
-let m_forceReload = true;
-let m_Credentials = "username|password"; // This is required to force reload data, otherwise you can use widget arguments
-// m_Credentials = "username|password|winsim.de"; // Add other drillisch company, default is premiumsim.de
+let m_forceReload = false;
 
 // How many minutes should the cache be used
 let m_CacheMinutes = 60 * 4;
-let m_fileManagerMode = "ICLOUD"
+let m_FileManagerMode = 'ICLOUD'; // OR 'LOCAL'
 
 // Styles
 const m_CanvSize = 200;
@@ -77,61 +78,67 @@ const m_MonthStart = new Date(m_Today.getFullYear(), m_Today.getMonth(), 1);
 const m_MonthEnd = new Date(m_Today.getFullYear(), m_Today.getMonth() + 1, 1);
 
 // Set up the file manager.
-const m_Filemanager = m_fileManagerMode === 'LOCAL' ? FileManager.local() : FileManager.iCloud();
+const m_Filemanager = m_FileManagerMode === 'LOCAL' ? FileManager.local() : FileManager.iCloud();
 
 // Set up cache
 let m_CachePath = m_Filemanager.joinPath(m_Filemanager.documentsDirectory(), Script.name());
-if (!m_Filemanager.fileExists(m_CachePath)) {
+if (!m_Filemanager.isDirectory(m_CachePath))
     m_Filemanager.createDirectory(m_CachePath);
-}
-m_CachePath = m_Filemanager.joinPath(m_CachePath, "Cache.json");
+
+m_CachePath = m_Filemanager.joinPath(m_CachePath, "cache.json");
 console.log("Cache Path: " + m_CachePath);
 const m_CacheExists = m_Filemanager.fileExists(m_CachePath)
 const m_CacheDate = m_CacheExists ? m_Filemanager.modificationDate(m_CachePath) : 0
 
-let username, password, provider;
-
-// Retrieve config file (if created)
+// Set up config
 const m_ConfigFile = m_Filemanager.joinPath(m_Filemanager.documentsDirectory(), Script.name()) + "/config.json";
-if (m_fileManagerMode === 'ICLOUD') m_Filemanager.downloadFileFromiCloud(m_ConfigFile);
+if (m_FileManagerMode === 'ICLOUD')
+    await m_Filemanager.downloadFileFromiCloud(m_ConfigFile);
 
-// (1) check first Widget Parameter
+console.log("Config Path: " + m_ConfigFile);
 
-// Parse widget input
+// Retrieve credentials
+let username, password, provider;
 const widgetParameterRAW = args.widgetParameter;
 
-if (widgetParameterRAW !== null)
+if (widgetParameterRAW)
 {
-    console.log("using Widget Parameter+" + args.widgetParameter);
+    console.log("using Widget Parameter");
     [username, password, provider] = widgetParameterRAW.toString().split("|");
 
     if (!username || !password)
     {
-        throw new Error("Invalid Widget parameter. Expected format: username|password|provider")
+        throw new Error("Invalid Widget parameter. Expected format: username|password|provider  The provider is optional.");
     }
 }
-// no Widget Parameter
-// (2) Check from Config file 
-else 
-if (m_Filemanager.fileExists(m_ConfigFile)) {
+else if (m_Filemanager.fileExists(m_ConfigFile))
+{
     console.log("using Config file: " + m_ConfigFile);
     let userStr = await m_Filemanager.readString(m_ConfigFile)
-    const CFG = JSON.parse(userStr);
-    if (CFG !== null)
+    const config = JSON.parse(userStr);
+    if (config !== null)
     {
-        username = CFG.username;
-        password = CFG.password;
-        if (CFG.provider !== null) provider = CFG.provider;
+        username = config.username;
+        password = config.password;
+        if (config.provider !== null)
+            provider = config.provider;
     }
 }
-// otherwise Error
 else if (config.runsInWidget)
 {
-    throw new Error("Widget parameter missing. Expected format: username|password|provider")
+    throw new Error("Invalid Widget parameter. Expected format: username|password|provider  The provider is optional.");
+}
+
+if (!config.runsInWidget)
+{
+    // Reload data if script is running within scriptable app
+    m_forceReload = true;
 }
 
 if (provider == null)
-	provider = "premiumsim.de";
+    provider = "premiumsim.de";
+
+console.log([username, password, provider]);
 
 // Used URLS
 let m_LoginPageUrl = "https://service." + provider;
@@ -240,13 +247,6 @@ async function getDataUsage()
         console.log(dataUsagePercent);
         return;
     }
-
-
-    let view = new WebView();
-    view.loadHTML(resp);
-    await view.present();
-
-
 }
 
 async function prepareLoginData()
