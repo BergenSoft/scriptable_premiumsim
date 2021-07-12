@@ -6,10 +6,13 @@
 
 
 /*****************
-Version 1.0.3
+Version 1.0.4
 
 Changelog:
 ----------
+
+Version 1.0.4:
+	- Parse data from new designed homepage.
 
 Version 1.0.3:
     - Added possibility to store credentials also in an external config on the iCloud Drive which is not being touched by updates.
@@ -138,7 +141,8 @@ if (!config.runsInWidget)
 if (provider == null)
     provider = "premiumsim.de";
 
-console.log([username, password, provider]);
+// Use this to show the used credentials and provider
+// console.log([username, password, provider]);
 
 // Used URLS
 let m_LoginPageUrl = "https://service." + provider;
@@ -210,12 +214,10 @@ async function getDataUsage()
         resp = await req.loadString();
 
         let dataInclusive = getSubstring(resp, ['class="dataBlob inclusive"', 'Inklusives Datenvolumen'], '</div>').trim();
-        let dataUsageBytes = getSubstring(resp, ['class="dataUsageOverlay"', '<div class="line">'], '</div>').trim();
-        let dataUsagePercent = getSubstring(resp, ['class="dataUsageOverlay"', '<div class="line">', '<div class="line">'], '</div>').trim();
-
+        let dataUsageBytes = getSubstring(resp, ['class="dataBlob usage"', 'Inklusives Datenvolumen'], '</div>').trim();
+		
         dataInclusive = dataInclusive.replace(",", ".").trim();
         dataUsageBytes = dataUsageBytes.replace(",", ".").trim();
-        dataUsagePercent = dataUsagePercent.replace(",", ".").trim();
 
         if (dataInclusive.indexOf('GB') !== -1)
             dataInclusive = parseInt(dataInclusive.substr(0, dataInclusive.length - 2));
@@ -235,7 +237,7 @@ async function getDataUsage()
         else if (dataUsageBytes.indexOf('B') !== -1)
             dataUsageBytes = parseFloat(dataUsageBytes.substr(0, dataUsageBytes.length - 1));
 
-        dataUsagePercent = parseFloat(dataUsagePercent.substr(0, dataUsagePercent.length - 1));
+        let dataUsagePercent = dataUsageBytes / (dataInclusive * 1024 * 1024 * 1024) * 100;
         dataUsageBytes = parseInt(dataUsageBytes);
 
         m_Data.bytes = dataUsageBytes;
