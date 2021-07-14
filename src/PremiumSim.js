@@ -12,8 +12,8 @@ Changelog:
 ----------
 
 Version 1.0.5:
-	- Added alert to enter credentials and save it to the config file
-	- Search in local and in iCloud storage for config and cache files
+	- Added alert to enter credetials and save it to the config file
+	- Search in iCloud for config and cache files
 	- Fixed percent representation to one decimal place
 
 Version 1.0.4:
@@ -286,35 +286,13 @@ async function prepareLoginData()
 
 function initFileManager()
 {
-	let fileManager = FileManager.local();
-	let path = fileManager.joinPath(fileManager.documentsDirectory(), Script.name());
-	if (fileManager.isDirectory(path))
-	{
-		console.log("Use local storage");
-		return fileManager;
-	}
-
 	fileManager = FileManager.iCloud();
 	path = fileManager.joinPath(fileManager.documentsDirectory(), Script.name());
-	if (fileManager.isDirectory(path))
-	{
-		console.log("Use iCloud storage");
-		return fileManager;
-	}
+	
+	if (!fileManager.isDirectory(path))
+		fileManager.createDirectory(path);
 
-	fileManager.createDirectory(path);
-
-	try
-	{
-		console.log("Use iCloud storage");
-		return FileManager.iCloud(); // Default FileManager on first start
-	}
-	catch (e)
-	{
-		console.log("Use local storage");
-		// Error could ocour when iCloud is disabled
-		return FileManager.local();
-	}
+	return fileManager;
 }
 
 function getCookiesString()
