@@ -6,10 +6,13 @@
 
 
 /*****************
-Version 1.0.5
+Version 1.0.6
 
 Changelog:
 ----------
+
+Version 1.0.6:
+	- Fixed login as Drillisch has changed their login page.
 
 Version 1.0.5:
 	- Added alert to enter credetials and save it to the config file
@@ -77,7 +80,7 @@ const m_forceReload = false;
 // For processing the requests
 let m_Cookies = { "isCookieAllowed": "true" };
 let m_Sid = null;
-let m_Csrf_token = null;
+let m_Token = null;
 
 // Usage data
 let m_Data = {
@@ -196,7 +199,7 @@ async function getDataUsage()
 		'TE': 'Trailers'
 	};
 
-	req.body = "_SID=" + m_Sid + "&UserLoginType%5Balias%5D=" + config.username + "&UserLoginType%5Bpassword%5D=" + config.password + "&UserLoginType%5Blogindata%5D=&UserLoginType%5Bcsrf_token%5D=" + m_Csrf_token;
+	req.body = "_SID=" + m_Sid + "&UserLoginType%5Balias%5D=" + config.username + "&UserLoginType%5Bpassword%5D=" + config.password + "&UserLoginType%5Blogindata%5D=&UserLoginType%5B_token%5D=" + m_Token;
 
 	req.onRedirect = function (request)
 	{
@@ -279,7 +282,7 @@ async function prepareLoginData()
 
 	appendCookies(req.response.cookies);
 
-	m_Csrf_token = getSubstring(resp, ['UserLoginType_csrf_token', 'value="'], "\"");
+	m_Token = getSubstring(resp, ['UserLoginType__token', 'value="'], "\"");
 
 	// Get sid
 	m_Sid = m_Cookies["_SID"];
