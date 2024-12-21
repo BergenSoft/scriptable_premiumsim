@@ -7,10 +7,13 @@
 
 
 /*****************
-Version 1.0.7
+Version 1.0.8
 
 Changelog:
 ----------
+
+Version 1.0.8:
+    - Fixed scrapper as Drillisch has changed the start page.
 
 Version 1.0.7:
     - Fixed scrapper as Drillisch has changed the start page.
@@ -228,8 +231,8 @@ async function getDataUsage()
         };
         resp = await req.loadString();
 
-        let dataUsageBytes = getSubstring(resp, ['class="dataUsageBar"', '<span class="font-weight-bold">'], '</span>').trim();
-        let dataInclusive = getSubstring(resp, ['class="dataUsageBar"', '< class="font-weight-bold">', 'von '], 'verbraucht').trim();
+        let dataUsageBytes = getSubstring(resp, ['class="dataUsageBar-info"', '<span class="font-weight-bold l-h4">'], '</span>').trim();
+        let dataInclusive = getSubstring(resp, ['class="dataUsageBar-info"', '<span class="l-txt-small">', 'von '], '</span>').trim();
 
         console.log("Data loaded");
 
@@ -264,7 +267,10 @@ async function getDataUsage()
         console.log(m_Data.total + " GB");
         console.log(dataUsageBytes);
         console.log(dataUsagePercent);
-        return;
+    }
+    else
+    {
+        console.log(req.response.statusCode);
     }
 }
 
@@ -292,6 +298,7 @@ async function prepareLoginData()
 
     // Get sid
     m_Sid = m_Cookies["_SID"];
+    console.log({ m_Token, m_Sid });
 }
 
 function initFileManager()
