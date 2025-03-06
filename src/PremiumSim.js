@@ -6,11 +6,15 @@
 
 
 
+
 /*****************
-Version 1.0.8
+Version 1.0.9
 
 Changelog:
 ----------
+
+Version 1.0.9:
+    - Fixed scrapper as Drillisch has changed the start page.
 
 Version 1.0.8:
     - Fixed scrapper as Drillisch has changed the start page.
@@ -231,13 +235,17 @@ async function getDataUsage()
         };
         resp = await req.loadString();
 
-        let dataUsageBytes = getSubstring(resp, ['class="dataUsageBar-info"', '<span class="font-weight-bold l-h4">'], '</span>').trim();
-        let dataInclusive = getSubstring(resp, ['class="dataUsageBar-info"', '<span class="l-txt-small">', 'von '], '</span>').trim();
+        let dataUsageBytes = getSubstring(resp, ['id="main"', 'dataUsageBar-info-numbers', '<div class="font-weight-bold">'], '</div>').trim();
+        let dataInclusive = getSubstring(resp, ['id="main"', 'dataUsageBar-info-numbers', '<span class="l-txt-small">', 'von'], '</div>').trim();
 
         console.log("Data loaded");
 
-        dataInclusive = dataInclusive.replace(",", ".").trim();
         dataUsageBytes = dataUsageBytes.replace(",", ".").trim();
+        dataInclusive = dataInclusive.replace(",", ".").trim();
+        
+        console.log(dataUsageBytes);
+        console.log(dataInclusive);
+        
 
         if (dataInclusive.indexOf('GB') !== -1)
             dataInclusive = parseInt(dataInclusive.substr(0, dataInclusive.length - 2), 10);
