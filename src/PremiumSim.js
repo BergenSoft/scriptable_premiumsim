@@ -235,8 +235,8 @@ async function getDataUsage()
         };
         resp = await req.loadString();
 
-        let dataUsageBytes = getSubstring(resp, ['id="main"', 'dataUsageBar-info-numbers', '<div class="font-weight-bold">'], '</div>').trim();
-        let dataInclusive = getSubstring(resp, ['id="main"', 'dataUsageBar-info-numbers', '<span class="l-txt-small">', 'von'], '</div>').trim();
+        let dataUsageBytes = getSubstring(resp, ['id="main"', 'dataUsageBar-info-numbers', '<span class="font-weight-bold">'], '</span>').trim();
+        let dataInclusive = getSubstring(resp, ['id="main"', 'dataUsageBar-info-numbers', '<span class="l-txt-small">', 'von'], '</span>').trim();
 
         console.log("Data loaded");
 
