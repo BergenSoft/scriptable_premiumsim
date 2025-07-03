@@ -8,10 +8,13 @@
 
 
 /*****************
-Version 1.0.9
+Version 1.0.10
 
 Changelog:
 ----------
+
+Version 1.0.10:
+    - Fixed request HTTP header capitalization.
 
 Version 1.0.9:
     - Fixed scrapper as Drillisch has changed the start page.
@@ -207,7 +210,7 @@ async function getDataUsage()
         'Connection': 'keep-alive',
         'Referer': m_LoginPageUrl,
         'Upgrade-Insecure-Requests': '1',
-        'TE': 'Trailers'
+        'TE': 'trailers'
     };
 
     req.body = "_SID=" + m_Sid + "&UserLoginType%5Balias%5D=" + config.username + "&UserLoginType%5Bpassword%5D=" + config.password + "&UserLoginType%5Blogindata%5D=&UserLoginType%5B_token%5D=" + m_Token;
@@ -231,7 +234,7 @@ async function getDataUsage()
             'Connection': 'keep-alive',
             'Referer': m_LoginPageUrl,
             'Upgrade-Insecure-Requests': '1',
-            'TE': 'Trailers'
+            'TE': 'trailers'
         };
         resp = await req.loadString();
 
@@ -295,7 +298,7 @@ async function prepareLoginData()
         'Content-Type': 'application/x-www-form-urlencoded',
         'Connection': 'keep-alive',
         'Upgrade-Insecure-Requests': '1',
-        'TE': 'Trailers'
+        'TE': 'trailers'
     };
 
     var resp = await req.loadString();
