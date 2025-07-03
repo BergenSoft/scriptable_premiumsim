@@ -8,10 +8,15 @@
 
 
 /*****************
-Version 1.0.10
+Version 1.0.11
 
 Changelog:
 ----------
+
+Version 1.0.11:
+    - Fixed scrapper as Drillisch has changed the start page.
+	- Included displaying used KB for small data volumns.
+	- Clarified some console logs. 
 
 Version 1.0.10:
     - Fixed request HTTP header capitalization.
@@ -238,16 +243,16 @@ async function getDataUsage()
         };
         resp = await req.loadString();
 
-        let dataUsageBytes = getSubstring(resp, ['id="main"', 'dataUsageBar-info-numbers', '<span class="font-weight-bold">'], '</span>').trim();
-        let dataInclusive = getSubstring(resp, ['id="main"', 'dataUsageBar-info-numbers', '<span class="l-txt-small">', 'von'], '</span>').trim();
+       let dataUsageBytes = getSubstring(resp, ['id="main"', 'e-data_usage_graph-info-numbers', 'font-weight-bold', '>'], '</span>').trim();
+        let dataInclusive = getSubstring(resp, ['id="main"', 'e-data_usage_graph-info-numbers', 'l-txt-small', '>von'], '</span>').trim();
 
         console.log("Data loaded");
 
         dataUsageBytes = dataUsageBytes.replace(",", ".").trim();
         dataInclusive = dataInclusive.replace(",", ".").trim();
         
-        console.log(dataUsageBytes);
-        console.log(dataInclusive);
+        console.log("dataUsageBytes: " + dataUsageBytes);
+        console.log("dataInclusive: " + dataInclusive);
         
 
         if (dataInclusive.indexOf('GB') !== -1)
@@ -275,9 +280,9 @@ async function getDataUsage()
         m_Data.percent = dataUsagePercent;
         m_Data.total = dataInclusive;
 
-        console.log(m_Data.total + " GB");
-        console.log(dataUsageBytes);
-        console.log(dataUsagePercent);
+        console.log("m_Data.total: " + m_Data.total + " GB");
+        console.log("dataUsageBytes: " + dataUsageBytes);
+        console.log("dataUsagePercent: " + dataUsagePercent);
     }
     else
     {
@@ -430,7 +435,11 @@ async function createWidget()
     m_Canvas.setTextAlignedCenter();
     m_Canvas.setTextColor(new Color(m_CanvTextColor));
     m_Canvas.setFont(Font.boldSystemFont(m_CanvTextSize));
-    if (m_Data.bytes < 100 * 1024 * 1024) // < 100 MB
+    if (m_Data.bytes < 100 * 1024) // < 100 KB
+    {
+        m_Canvas.drawTextInRect(`${(m_Data.bytes / 1024).toFixed(0)} KB / ${m_Data.total} GB`, canvTextRectBytes);
+    }
+    else if (m_Data.bytes < 1024 * 1024) // < 1 MB
     {
         m_Canvas.drawTextInRect(`${(m_Data.bytes / 1024 / 1024).toFixed(0)} MB / ${m_Data.total} GB`, canvTextRectBytes);
     }
